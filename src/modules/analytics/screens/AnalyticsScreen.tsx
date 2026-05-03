@@ -3,6 +3,7 @@ import { useTheme } from "@/shared/theme";
 import { SlidersHorizontal, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,8 +12,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SafeToSpendCard } from "../features/safeToSpend/components/SafeToSpendCard";
+import { useSafeToSpend } from "../features/safeToSpend/hooks/useSafeToSpend";
 import { SpendingPulseCard } from "../features/spendingPulse/components/SpendingPulseCard";
+import { useSpendingPulse } from "../features/spendingPulse/hooks/useSpendingPulse";
 import { SpendingVelocityCard } from "../features/spendingVelocity/components/SpendingVelocityCard";
+import { useSpendingVelocity } from "../features/spendingVelocity/hooks/useSpendingVelocity";
 import { AnalyticsProvider } from "../store/AnalyticsProvider";
 
 const FILTER_TABS = ["All", "UPI", "Cash", "Credit", "Debit"];
@@ -20,6 +24,12 @@ const FILTER_TABS = ["All", "UPI", "Cash", "Credit", "Debit"];
 const AnalyticsContent = () => {
   const theme = useTheme();
   const [activeFilter, setActiveFilter] = useState("All");
+
+  const { loading: loadingA, error: errorA } = useSafeToSpend();
+  const { loading: loadingB, error: errorB } = useSpendingPulse();
+  const { loading: loadingC, error: errorC } = useSpendingVelocity();
+  const isLoading = loadingA || loadingB || loadingC;
+  const hasError = !isLoading && !!(errorA || errorB || errorC);
 
   return (
     <SafeAreaView
@@ -47,9 +57,23 @@ const AnalyticsContent = () => {
           </TouchableOpacity>
         </View>
 
-        <SafeToSpendCard />
-        <SpendingPulseCard />
-        <SpendingVelocityCard />
+        {isLoading ? (
+          <View style={styles.spinnerContainer}>
+            <ActivityIndicator size="large" color={theme.veloBlue} />
+          </View>
+        ) : hasError ? (
+          <View style={styles.spinnerContainer}>
+            <Text style={[styles.errorText, { color: theme.subtext }]}>
+              Something went wrong.{"\n"}Pull down to retry.
+            </Text>
+          </View>
+        ) : (
+          <>
+            <SafeToSpendCard />
+            <SpendingPulseCard />
+            <SpendingVelocityCard />
+          </>
+        )}
 
         <View style={styles.filterSection}>
           <Text style={[styles.filterLabel, { color: theme.subtext }]}>
@@ -96,6 +120,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
+  },
+  spinnerContainer: { paddingVertical: 60, alignItems: "center" },
+  errorText: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+    textAlign: "center",
+    lineHeight: 22,
   },
   filterSection: { marginTop: 8 },
   filterLabel: {

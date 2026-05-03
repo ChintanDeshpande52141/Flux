@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { getSpendingVelocity } from "../services/spendingVelocityService";
-import { SpendingVelocityData } from "../types";
 
 export const useSpendingVelocity = () => {
-  const [data, setData] = useState<SpendingVelocityData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getSpendingVelocity()
-      .then(setData)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  const { session } = useAuth();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["spending-velocity"],
+    queryFn: getSpendingVelocity,
+    enabled: !!session,
+  });
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+  };
 };

@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { getSafeToSpend } from "../services/safeToSpendService";
-import { SafeToSpendData } from "../types";
 
 export const useSafeToSpend = () => {
-  const [data, setData] = useState<SafeToSpendData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getSafeToSpend()
-      .then(setData)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  const { session } = useAuth();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["safe-to-spend"],
+    queryFn: getSafeToSpend,
+    enabled: !!session,
+  });
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+  };
 };

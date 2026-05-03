@@ -1,6 +1,6 @@
 import { useTheme } from "@/shared/theme";
 import { Tabs } from "expo-router";
-import { Activity, CreditCard, MessageCircle } from "lucide-react-native";
+import { Activity, CreditCard, MessageCircle, Zap } from "lucide-react-native";
 import React from "react";
 
 export default function TabLayout() {
@@ -49,6 +49,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <CreditCard size={size} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => <Zap size={size} color={color} />,
         }}
       />
     </Tabs>

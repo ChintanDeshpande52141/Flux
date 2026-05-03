@@ -1,4 +1,10 @@
-import { Card, FluxLineChart, NavButton } from "@/shared/components";
+import {
+  Card,
+  FluxLineChart,
+  NavButton,
+  SkeletonBlock,
+  SkeletonCard,
+} from "@/shared/components";
 import { useTheme } from "@/shared/theme";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -12,7 +18,14 @@ export const SpendingPulseCard = () => {
   const router = useRouter();
   const { data, loading } = useSpendingPulse();
 
-  if (loading || !data) return null;
+  if (loading || !data)
+    return (
+      <SkeletonCard>
+        <SkeletonBlock height={14} width="55%" />
+        <SkeletonBlock height={120} />
+        <SkeletonBlock height={12} width="40%" />
+      </SkeletonCard>
+    );
 
   const chartData = data.entries.map((e) => ({
     value: e.value,

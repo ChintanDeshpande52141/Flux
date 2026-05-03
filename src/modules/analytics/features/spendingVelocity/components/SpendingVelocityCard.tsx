@@ -1,4 +1,9 @@
-import { Card, ProgressBar } from "@/shared/components";
+import {
+  Card,
+  ProgressBar,
+  SkeletonBlock,
+  SkeletonCard,
+} from "@/shared/components";
 import { useTheme } from "@/shared/theme";
 import { Zap } from "lucide-react-native";
 import React from "react";
@@ -9,7 +14,15 @@ export const SpendingVelocityCard = () => {
   const theme = useTheme();
   const { data, loading } = useSpendingVelocity();
 
-  if (loading || !data) return null;
+  if (loading || !data)
+    return (
+      <SkeletonCard>
+        <SkeletonBlock height={14} width="55%" />
+        <SkeletonBlock height={10} width="70%" />
+        <SkeletonBlock height={8} />
+        <SkeletonBlock height={56} />
+      </SkeletonCard>
+    );
 
   const velocityColor =
     data.rate > 80

@@ -1,4 +1,4 @@
-import { MetricCard } from "@/shared/components";
+import { MetricCard, SkeletonBlock, SkeletonCard } from "@/shared/components";
 import { ChevronRight } from "lucide-react-native";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -11,7 +11,14 @@ export const SafeToSpendCard = () => {
   const { data, loading } = useSafeToSpend();
   const [period, setPeriod] = useState<Period>("Monthly");
 
-  if (loading || !data) return null;
+  if (loading || !data)
+    return (
+      <SkeletonCard>
+        <SkeletonBlock height={12} width="50%" />
+        <SkeletonBlock height={40} width="65%" />
+        <SkeletonBlock height={52} />
+      </SkeletonCard>
+    );
 
   const nextPeriod = () => {
     const idx = PERIODS.indexOf(period);

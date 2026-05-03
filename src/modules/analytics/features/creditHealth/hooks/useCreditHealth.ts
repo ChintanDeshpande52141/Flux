@@ -1,18 +1,17 @@
-import { useEffect, useState } from "react";
+import { useAuth } from "@/shared/context/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { getCreditHealth } from "../services/creditHealthService";
-import { CreditHealthData } from "../types";
 
 export const useCreditHealth = () => {
-  const [data, setData] = useState<CreditHealthData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    getCreditHealth()
-      .then(setData)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  const { session } = useAuth();
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["credit-health"],
+    queryFn: getCreditHealth,
+    enabled: !!session,
+  });
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    error: error?.message ?? null,
+  };
 };
