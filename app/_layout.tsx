@@ -1,3 +1,4 @@
+import { LoadingScreen } from "@/shared/components/LoadingScreen";
 import { AuthProvider, useAuth } from "@/shared/context/AuthContext";
 import {
   OnboardingProvider,
@@ -34,36 +35,52 @@ function AppShell({
   fontsLoaded: boolean;
   children: React.ReactNode;
 }) {
-  const { loading: authLoading } = useAuth();
+  const { loading: authLoading, session } = useAuth();
   const { loading: onboardingLoading } = useOnboarding();
-  const ready = fontsLoaded && !authLoading && !onboardingLoading;
+  // Only wait for onboarding if there's a session
+  const ready = fontsLoaded && !authLoading && (!session || !onboardingLoading);
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
 
-  if (!ready) return null;
+  // Show loading screen while waiting for fonts or onboarding data
+  if (!ready) return <LoadingScreen message="Loading..." />;
   return <>{children}</>;
 }
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { session } = useAuth();
-  const { onboarded } = useOnboarding();
+  const { session, loading: authLoading } = useAuth();
+  const { loading: onboardingLoading, onboarded } = useOnboarding();
   const router = useRouter();
   const segments = useSegments();
 
   useEffect(() => {
+    // Wait for everything to settle
+    // If we have a session but we don't know the onboarding status yet, DO NOTHING
+    if (authLoading || (session && onboardingLoading)) {
+      return;
+    }
+
     const inAuthGroup = segments[0] === "login";
     const inOnboarding = segments[0] === "onboarding";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/login");
-    } else if (!onboarded) {
-      if (!inOnboarding) router.replace("/onboarding");
     } else {
-      if (inAuthGroup || inOnboarding) router.replace("/(tabs)");
+      // At this point, we KNOW session exists AND onboardingLoading is false
+      if (!onboarded) {
+        if (!inOnboarding) router.replace("/onboarding");
+      } else {
+        if (inAuthGroup || inOnboarding) router.replace("/(tabs)");
+      }
     }
-  }, [session, onboarded, segments]);
+  }, [session, authLoading, onboardingLoading, onboarded, segments]);
+
+  // Show loading screen while waiting for onboarding data
+  if (authLoading || (session && onboardingLoading)) {
+    return <LoadingScreen message="Loading your data..." />;
+  }
 
   return <>{children}</>;
 }
