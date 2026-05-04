@@ -1,4 +1,3 @@
-import { FilterTabs } from "@/shared/components";
 import { useTheme } from "@/shared/theme";
 import { Plus, SlidersHorizontal, Zap } from "lucide-react-native";
 import React, { useState } from "react";
@@ -81,17 +80,6 @@ const AnalyticsContent = () => {
             <SpendingVelocityCard />
           </>
         )}
-
-        <View style={styles.filterSection}>
-          <Text style={[styles.filterLabel, { color: theme.subtext }]}>
-            FILTER SPENDING
-          </Text>
-          <FilterTabs
-            tabs={FILTER_TABS}
-            active={activeFilter}
-            onChange={setActiveFilter}
-          />
-        </View>
       </ScrollView>
 
       {/* FAB */}
