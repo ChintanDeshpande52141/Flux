@@ -54,7 +54,6 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { loading: onboardingLoading, onboarded } = useOnboarding();
   const router = useRouter();
   const segments = useSegments();
-
   useEffect(() => {
     // Wait for everything to settle
     // If we have a session but we don't know the onboarding status yet, DO NOTHING

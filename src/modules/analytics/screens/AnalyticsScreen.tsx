@@ -1,6 +1,6 @@
 import { FilterTabs } from "@/shared/components";
 import { useTheme } from "@/shared/theme";
-import { SlidersHorizontal, Zap } from "lucide-react-native";
+import { Plus, SlidersHorizontal, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { SpendingPulseCard } from "../features/spendingPulse/components/Spending
 import { useSpendingPulse } from "../features/spendingPulse/hooks/useSpendingPulse";
 import { SpendingVelocityCard } from "../features/spendingVelocity/components/SpendingVelocityCard";
 import { useSpendingVelocity } from "../features/spendingVelocity/hooks/useSpendingVelocity";
+import { AddExpenseModal } from "../features/transactions/components/AddExpenseModal";
 import { AnalyticsProvider } from "../store/AnalyticsProvider";
 
 const FILTER_TABS = ["All", "UPI", "Cash", "Credit", "Debit"];
@@ -24,6 +25,7 @@ const FILTER_TABS = ["All", "UPI", "Cash", "Credit", "Debit"];
 const AnalyticsContent = () => {
   const theme = useTheme();
   const [activeFilter, setActiveFilter] = useState("All");
+  const [showAddExpense, setShowAddExpense] = useState(false);
 
   const { loading: loadingA, error: errorA } = useSafeToSpend();
   const { loading: loadingB, error: errorB } = useSpendingPulse();
@@ -57,6 +59,11 @@ const AnalyticsContent = () => {
           </TouchableOpacity>
         </View>
 
+        <AddExpenseModal
+          visible={showAddExpense}
+          onClose={() => setShowAddExpense(false)}
+        />
+
         {isLoading ? (
           <View style={styles.spinnerContainer}>
             <ActivityIndicator size="large" color={theme.veloBlue} />
@@ -86,6 +93,15 @@ const AnalyticsContent = () => {
           />
         </View>
       </ScrollView>
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: theme.veloBlue }]}
+        onPress={() => setShowAddExpense(true)}
+        activeOpacity={0.85}
+      >
+        <Plus size={20} color="#fff" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -97,8 +113,8 @@ export const AnalyticsScreen = () => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scroll: { padding: 20, paddingBottom: 40 },
+  container: { flex: 1, position: "relative" },
+  scroll: { padding: 20, paddingBottom: 70 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -122,6 +138,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   spinnerContainer: { paddingVertical: 60, alignItems: "center" },
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 10,
+    opacity: 0.85,
+  },
   errorText: {
     fontSize: 14,
     fontFamily: "Inter-Regular",

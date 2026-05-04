@@ -44,11 +44,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signOut = async () => {
-    // const allKeys = await AsyncStorage.getAllKeys();
-    // const fluxKeys = allKeys.filter((k: string) => k.startsWith("flux_"));
-    // if (fluxKeys.length > 0) {
-    //   await AsyncStorage.multiRemove(fluxKeys);
-    // }
     await supabase.auth.signOut();
   };
 
