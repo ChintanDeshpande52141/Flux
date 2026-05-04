@@ -1,3 +1,4 @@
+import { Button } from "@/shared/components";
 import { useAuth } from "@/shared/context/AuthContext";
 import { supabase } from "@/shared/services/supabaseClient";
 import { useTheme } from "@/shared/theme";
@@ -5,7 +6,6 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -39,7 +39,7 @@ type Mode = "signin" | "signup" | "forgot";
 export default function LoginScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, session } = useAuth();
 
   const [mode, setMode] = useState<Mode>("signin");
   const [email, setEmail] = useState("");
@@ -73,21 +73,21 @@ export default function LoginScreen() {
     try {
       if (mode === "signin") {
         await signIn(email.trim(), password);
-        router.replace("/(tabs)");
+        setLoading(false);
       } else if (mode === "signup") {
         await signUp(email.trim(), password);
-        router.replace("/(tabs)");
+        setLoading(false);
       } else {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(
           email.trim(),
         );
         if (resetError) throw resetError;
         setSuccess("Password reset link sent! Check your inbox.");
+        setLoading(false);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Something went wrong";
       setError(friendlyError(msg));
-    } finally {
       setLoading(false);
     }
   };
@@ -227,29 +227,19 @@ export default function LoginScreen() {
               </View>
             )}
 
-            <Pressable
-              style={[
-                styles.btn,
-                {
-                  backgroundColor: theme.veloBlue,
-                  opacity: !isValid || loading ? 0.4 : 1,
-                },
-              ]}
+            <Button
+              title={
+                mode === "signin"
+                  ? "Sign In"
+                  : mode === "signup"
+                    ? "Create Account"
+                    : "Send Reset Link"
+              }
               onPress={handleSubmit}
-              disabled={!isValid || loading}
-            >
-              {loading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.btnText}>
-                  {mode === "signin"
-                    ? "Sign In"
-                    : mode === "signup"
-                      ? "Create Account"
-                      : "Send Reset Link"}
-                </Text>
-              )}
-            </Pressable>
+              loading={loading}
+              disabled={!isValid}
+              style={styles.btn}
+            />
           </View>
 
           {/* Bottom toggle */}
