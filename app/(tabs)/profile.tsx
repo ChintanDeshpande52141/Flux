@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import {
   ChevronRight,
   CreditCard,
+  List,
   LogOut,
   RefreshCw,
   Target,
@@ -192,6 +193,29 @@ export default function ProfileScreen() {
           BUDGET SETTINGS
         </Text>
         <Card padding={0} style={styles.settingsCard}>
+          <TouchableOpacity
+            style={[styles.settingsRow, { borderBottomColor: theme.border }]}
+            onPress={() => router.push("/transactions")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.settingsIcon,
+                { backgroundColor: theme.veloBlueDim },
+              ]}
+            >
+              <List size={16} color={theme.veloBlue} />
+            </View>
+            <View style={styles.settingsLabel}>
+              <Text style={[styles.settingsText, { color: theme.text }]}>
+                View Transactions
+              </Text>
+              <Text style={[styles.settingsMeta, { color: theme.subtext }]}>
+                Browse & filter your spending history
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
           <TouchableOpacity
             style={[styles.settingsRow, { borderBottomColor: theme.border }]}
             onPress={handleResetOnboarding}

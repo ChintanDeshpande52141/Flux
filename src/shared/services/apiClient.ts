@@ -39,7 +39,11 @@ function buildUrl(
 
 async function handleResponse<T>(res: Response): Promise<T> {
   const json = await res.json();
-  if (json.error) throw new Error(json.error);
+  if (json.error) {
+    const msg =
+      typeof json.error === "string" ? json.error : JSON.stringify(json.error);
+    throw new Error(msg);
+  }
   return json.data as T;
 }
 
@@ -74,5 +78,9 @@ export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
 
 export async function apiDelete(path: string): Promise<void> {
   const headers = await getAuthHeaders();
-  await fetch(buildUrl(path), { method: "DELETE", headers });
+  const res = await fetch(buildUrl(path), { method: "DELETE", headers });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(json.error ?? `Delete failed with status ${res.status}`);
+  }
 }

@@ -1,18 +1,19 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getSubscriptionList } from "../services/subscriptionListService";
-import { SubscriptionListData } from "../types";
 
 export const useSubscriptionList = () => {
-  const [data, setData] = useState<SubscriptionListData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data,
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ["subscriptions"],
+    queryFn: getSubscriptionList,
+  });
 
-  useEffect(() => {
-    getSubscriptionList()
-      .then(setData)
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { data, loading, error };
+  return {
+    data: data ?? null,
+    loading,
+    error: error ? (error as Error).message : null,
+  };
 };

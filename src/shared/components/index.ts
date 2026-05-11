@@ -1,6 +1,7 @@
 export { AppHeader } from "./AppHeader";
 export { Button } from "./Button";
 export { Card } from "./Card";
+export { DatePicker } from "./DatePicker";
 export { FilterTabs } from "./FilterTabs";
 export { FluxLineChart } from "./FluxLineChart";
 export { InsightItem } from "./InsightItem";
