@@ -77,6 +77,7 @@ export const FluxLineChart = ({
           hideYAxisText={!showYAxis}
           yAxisColor="transparent"
           xAxisColor="transparent"
+          yAxisLabelPrefix="₹"
           yAxisTextStyle={{
             fontSize: 10,
             fontFamily: "Inter-Regular",
@@ -91,6 +92,9 @@ export const FluxLineChart = ({
           endSpacing={endSpacing}
           noOfSections={noOfSections}
           backgroundColor="transparent"
+          isAnimated
+          animateOnDataChange
+          animationDuration={600}
         />
       )}
     </View>

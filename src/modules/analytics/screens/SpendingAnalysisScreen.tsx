@@ -17,7 +17,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -29,17 +29,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getSpendingAnalysis } from "../features/spendingPulse/services/spendingAnalysisService";
-import {
-  TransactionsList,
-  TransactionStats,
-} from "../features/transactions/components/TransactionsList";
-
-type Tab = "Overview" | "Transactions";
 
 export const SpendingAnalysisScreen = () => {
   const theme = useTheme();
-  const [activeTab, setActiveTab] = useState<Tab>("Overview");
-  const [stats, setStats] = useState<TransactionStats>({ count: 0, total: 0 });
 
   const { session } = useAuth();
   const { data, isLoading } = useQuery({
@@ -72,43 +64,6 @@ export const SpendingAnalysisScreen = () => {
     data?.dailyBreakdown.map((d) => ({ value: d.value, label: d.label })) ?? [];
   const monthlyChartData =
     data?.monthlyTrend.map((d) => ({ value: d.value, label: d.label })) ?? [];
-
-  const tabSwitcher = (
-    <View
-      style={[
-        styles.tabRow,
-        {
-          backgroundColor: theme.surfaceVariant,
-          marginHorizontal: 20,
-          marginBottom: 12,
-        },
-      ]}
-    >
-      {(["Overview", "Transactions"] as Tab[]).map((tab) => {
-        const isActive = activeTab === tab;
-        return (
-          <TouchableOpacity
-            key={tab}
-            style={[
-              styles.tabBtn,
-              isActive && { backgroundColor: theme.surface },
-            ]}
-            onPress={() => setActiveTab(tab)}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[
-                styles.tabLabel,
-                { color: isActive ? theme.text : theme.subtext },
-              ]}
-            >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
-  );
 
   return (
     <SafeAreaView
@@ -164,141 +119,104 @@ export const SpendingAnalysisScreen = () => {
               </View>
             </MetricCard>
           </View>
-          {tabSwitcher}
 
-          {activeTab === "Overview" ? (
-            <ScrollView
-              contentContainerStyle={styles.scroll}
-              showsVerticalScrollIndicator={false}
-            >
-              {/* Daily Breakdown */}
-              <Card padding={20}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Daily Breakdown
-                </Text>
-                <FluxLineChart
-                  data={dailyChartData}
-                  height={130}
-                  showRules
-                  showYAxis
-                  noOfSections={4}
-                />
-              </Card>
-
-              {/* Category Breakdown */}
-              <Card padding={20}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Category Breakdown
-                </Text>
-                <View style={styles.categoryList}>
-                  {data.categoryBreakdown.map((cat) => (
-                    <View key={cat.label} style={styles.categoryRow}>
-                      <View style={styles.catLabelRow}>
-                        <Text style={[styles.catLabel, { color: theme.text }]}>
-                          {cat.label}
-                        </Text>
-                        <View style={styles.catRight}>
-                          <Text
-                            style={[
-                              styles.catPercent,
-                              { color: theme.subtext },
-                            ]}
-                          >
-                            {cat.percent}%
-                          </Text>
-                          <Text
-                            style={[styles.catAmount, { color: theme.text }]}
-                          >
-                            ₹{cat.amount.toLocaleString()}
-                          </Text>
-                        </View>
-                      </View>
-                      <ProgressBar
-                        progress={cat.percent / 100}
-                        color={cat.color}
-                        height={6}
-                      />
-                    </View>
-                  ))}
-                </View>
-              </Card>
-
-              {/* Monthly Trend */}
-              <Card padding={20}>
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>
-                  Monthly Trend
-                </Text>
-                <FluxLineChart
-                  data={monthlyChartData}
-                  height={110}
-                  initialSpacing={20}
-                  endSpacing={20}
-                />
-                <View style={[styles.avgRow, { borderTopColor: theme.border }]}>
-                  <Text style={[styles.avgLabel, { color: theme.subtext }]}>
-                    Average monthly spending
-                  </Text>
-                  <Text style={[styles.avgAmount, { color: theme.text }]}>
-                    ₹{data.avgMonthlySpending.toLocaleString()}
-                  </Text>
-                </View>
-              </Card>
-
-              {/* Insights */}
-              <Text style={[styles.insightsTitle, { color: theme.text }]}>
-                Insights
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Daily Breakdown */}
+            <Card padding={20}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Daily Breakdown
               </Text>
-              {data.insights.map((insight) => (
-                <InsightItem
-                  key={insight.id}
-                  title={insight.title}
-                  body={insight.body}
-                  accentColor={
-                    insight.type === "warning"
-                      ? theme.warning
-                      : insight.type === "success"
-                        ? theme.success
-                        : theme.veloBlue
-                  }
-                  icon={
-                    insight.type === "warning" ? (
-                      <AlertTriangle size={16} color={theme.warning} />
-                    ) : (
-                      <CheckCircle size={16} color={theme.success} />
-                    )
-                  }
-                />
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={styles.transactionsWrap}>
-              <TransactionsList onStatsChange={setStats} />
+              <FluxLineChart
+                data={dailyChartData}
+                height={130}
+                showRules
+                showYAxis
+                noOfSections={4}
+              />
+            </Card>
 
-              {/* Sticky total bar */}
-              <View
-                style={[
-                  styles.totalBar,
-                  {
-                    backgroundColor: theme.surface,
-                    borderTopColor: theme.border,
-                  },
-                ]}
-              >
-                <Text style={[styles.totalCount, { color: theme.subtext }]}>
-                  {stats.count}{" "}
-                  {stats.count === 1 ? "transaction" : "transactions"}
+            {/* Monthly Trend */}
+            <Card padding={20}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Monthly Trend
+              </Text>
+              <FluxLineChart
+                data={monthlyChartData}
+                height={110}
+                initialSpacing={20}
+                endSpacing={20}
+              />
+              <View style={[styles.avgRow, { borderTopColor: theme.border }]}>
+                <Text style={[styles.avgLabel, { color: theme.subtext }]}>
+                  Average monthly spending
                 </Text>
-                <View style={styles.totalRight}>
-                  <Text style={[styles.totalLabel, { color: theme.subtext }]}>
-                    Total
-                  </Text>
-                  <Text style={[styles.totalAmount, { color: theme.text }]}>
-                    ₹{stats.total.toLocaleString()}
-                  </Text>
-                </View>
+                <Text style={[styles.avgAmount, { color: theme.text }]}>
+                  ₹{data.avgMonthlySpending.toLocaleString()}
+                </Text>
               </View>
-            </View>
-          )}
+            </Card>
+            {/* Category Breakdown */}
+            <Card padding={20}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>
+                Category Breakdown
+              </Text>
+              <View style={styles.categoryList}>
+                {data.categoryBreakdown.map((cat) => (
+                  <View key={cat.label} style={styles.categoryRow}>
+                    <View style={styles.catLabelRow}>
+                      <Text style={[styles.catLabel, { color: theme.text }]}>
+                        {cat.label}
+                      </Text>
+                      <View style={styles.catRight}>
+                        <Text
+                          style={[styles.catPercent, { color: theme.subtext }]}
+                        >
+                          {cat.percent}%
+                        </Text>
+                        <Text style={[styles.catAmount, { color: theme.text }]}>
+                          ₹{cat.amount.toLocaleString()}
+                        </Text>
+                      </View>
+                    </View>
+                    <ProgressBar
+                      progress={cat.percent / 100}
+                      color={cat.color}
+                      height={6}
+                    />
+                  </View>
+                ))}
+              </View>
+            </Card>
+
+            {/* Insights */}
+            <Text style={[styles.insightsTitle, { color: theme.text }]}>
+              Insights
+            </Text>
+            {data.insights.map((insight) => (
+              <InsightItem
+                key={insight.id}
+                title={insight.title}
+                body={insight.body}
+                accentColor={
+                  insight.type === "warning"
+                    ? theme.warning
+                    : insight.type === "success"
+                      ? theme.success
+                      : theme.veloBlue
+                }
+                icon={
+                  insight.type === "warning" ? (
+                    <AlertTriangle size={16} color={theme.warning} />
+                  ) : (
+                    <CheckCircle size={16} color={theme.success} />
+                  )
+                }
+              />
+            ))}
+          </ScrollView>
         </>
       )}
     </SafeAreaView>
@@ -370,31 +288,5 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 4,
   },
-  tabRow: {
-    flexDirection: "row",
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
-  },
-  tabBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 9,
-  },
-  tabLabel: { fontSize: 13, fontFamily: "Inter-Bold" },
-  transactionsWrap: { flex: 1 },
-  totalBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-  },
-  totalCount: { fontSize: 13, fontFamily: "Inter-Regular" },
-  totalRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  totalLabel: { fontSize: 13, fontFamily: "Inter-Regular" },
-  totalAmount: { fontSize: 16, fontFamily: "Inter-Black" },
   spinnerContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

@@ -1,7 +1,7 @@
 import { Card } from "@/shared/components";
 import { useTheme } from "@/shared/theme";
 import { Info, Plus, Zap } from "lucide-react-native";
-import React from "react";
+import React, { useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -10,13 +10,19 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AddFixedBillModal } from "../features/subscriptionList/components/AddFixedBillModal";
 import { SubscriptionList } from "../features/subscriptionList/components/SubscriptionList";
 import { useSubscriptionList } from "../features/subscriptionList/hooks/useSubscriptionList";
+import { Subscription } from "../features/subscriptionList/types";
 import { SubscriptionsProvider } from "../store/SubscriptionsProvider";
 
 const VaultContent = () => {
   const theme = useTheme();
   const { data } = useSubscriptionList();
+  const [showAddBill, setShowAddBill] = useState(false);
+  const [editingSubscription, setEditingSubscription] = useState<
+    Subscription | undefined
+  >();
 
   return (
     <SafeAreaView
@@ -32,6 +38,10 @@ const VaultContent = () => {
         <TouchableOpacity
           style={[styles.addBtn, { backgroundColor: theme.surfaceVariant }]}
           activeOpacity={0.7}
+          onPress={() => {
+            setEditingSubscription(undefined);
+            setShowAddBill(true);
+          }}
         >
           <Plus size={20} color={theme.text} />
         </TouchableOpacity>
@@ -89,8 +99,22 @@ const VaultContent = () => {
           </Card>
         )}
 
-        <SubscriptionList />
+        <SubscriptionList
+          onEdit={(item) => {
+            setEditingSubscription(item);
+            setShowAddBill(true);
+          }}
+        />
       </ScrollView>
+
+      <AddFixedBillModal
+        visible={showAddBill}
+        onClose={() => {
+          setShowAddBill(false);
+          setEditingSubscription(undefined);
+        }}
+        subscription={editingSubscription}
+      />
     </SafeAreaView>
   );
 };

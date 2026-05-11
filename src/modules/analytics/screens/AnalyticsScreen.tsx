@@ -1,5 +1,6 @@
 import { useTheme } from "@/shared/theme";
-import { Plus, SlidersHorizontal, Zap } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { ArrowRight, Plus, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -19,11 +20,33 @@ import { useSpendingVelocity } from "../features/spendingVelocity/hooks/useSpend
 import { AddExpenseModal } from "../features/transactions/components/AddExpenseModal";
 import { AnalyticsProvider } from "../store/AnalyticsProvider";
 
-const FILTER_TABS = ["All", "UPI", "Cash", "Credit", "Debit"];
+const TransactionsCTACard = () => {
+  const theme = useTheme();
+  const router = useRouter();
+  return (
+    <TouchableOpacity
+      style={[
+        styles.ctaCard,
+        { backgroundColor: theme.surface, borderColor: theme.border },
+      ]}
+      onPress={() => router.push("/transactions")}
+      activeOpacity={0.75}
+    >
+      <View style={styles.ctaLeft}>
+        <Text style={[styles.ctaTitle, { color: theme.text }]}>
+          Look into your Transactions
+        </Text>
+        <Text style={[styles.ctaSub, { color: theme.subtext }]}>
+          Filter & explore your spending history
+        </Text>
+      </View>
+      <ArrowRight size={18} color={theme.veloBlue} />
+    </TouchableOpacity>
+  );
+};
 
 const AnalyticsContent = () => {
   const theme = useTheme();
-  const [activeFilter, setActiveFilter] = useState("All");
   const [showAddExpense, setShowAddExpense] = useState(false);
 
   const { loading: loadingA, error: errorA } = useSafeToSpend();
@@ -47,15 +70,7 @@ const AnalyticsContent = () => {
             </View>
             <Text style={[styles.logoText, { color: theme.text }]}>Pulse</Text>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.filterBtn,
-              { backgroundColor: theme.surfaceVariant },
-            ]}
-            activeOpacity={0.7}
-          >
-            <SlidersHorizontal size={16} color={theme.subtext} />
-          </TouchableOpacity>
+          <View style={styles.filterBtn} />
         </View>
 
         <AddExpenseModal
@@ -76,6 +91,7 @@ const AnalyticsContent = () => {
         ) : (
           <>
             <SafeToSpendCard />
+            <TransactionsCTACard />
             <SpendingPulseCard />
             <SpendingVelocityCard />
           </>
@@ -149,11 +165,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  filterSection: { marginTop: 8 },
-  filterLabel: {
-    fontSize: 11,
-    fontFamily: "Inter-Bold",
-    letterSpacing: 0.8,
-    marginBottom: 10,
+  ctaCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
+  ctaLeft: { flex: 1, gap: 3 },
+  ctaTitle: { fontSize: 14, fontFamily: "Inter-Bold" },
+  ctaSub: { fontSize: 12, fontFamily: "Inter-Regular" },
 });

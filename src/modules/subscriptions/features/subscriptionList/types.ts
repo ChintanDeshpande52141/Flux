@@ -11,6 +11,7 @@ export type Subscription = {
   badge?: SubscriptionBadge;
   logoInitial: string;
   logoColor: string;
+  paymentType?: "UPI" | "Cash" | "Credit" | "Debit";
 };
 
 export type SubscriptionCategory = {

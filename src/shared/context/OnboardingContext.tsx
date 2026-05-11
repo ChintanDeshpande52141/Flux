@@ -80,7 +80,7 @@ export const OnboardingProvider = ({
       setOnboarded(false);
       setData(null);
     }
-  }, [session?.user?.id]);
+  }, [session]);
 
   const completeOnboarding = async (d: OnboardingData) => {
     await apiPost("/onboarding", {
