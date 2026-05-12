@@ -1,17 +1,21 @@
+import { useTotalTracked } from "@/modules/analytics/features/profile/hooks/useTotalTracked";
 import { Card } from "@/shared/components";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useOnboarding } from "@/shared/context/OnboardingContext";
+import { useThemeContext } from "@/shared/context/ThemeContext";
 import { useTheme } from "@/shared/theme";
 import { useRouter } from "expo-router";
 import {
+  Bell,
   ChevronRight,
-  CreditCard,
-  List,
+  DollarSign,
+  HelpCircle,
+  Lock,
   LogOut,
-  RefreshCw,
-  Target,
-  TrendingUp,
-  Zap,
+  Moon,
+  Palette,
+  User,
+  UserCircle,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -19,6 +23,7 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -28,29 +33,43 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const { user, signOut } = useAuth();
-  const { data, resetOnboarding } = useOnboarding();
+  const { user, signOut, loading: authLoading } = useAuth();
+  const { resetOnboarding } = useOnboarding();
+  const { data: totalsData } = useTotalTracked();
+  const { themeMode, toggleTheme } = useThemeContext();
   const [signingOut, setSigningOut] = useState(false);
 
-  // const handleSignOut = () => {
-  //   Alert.alert("Sign out", "Are you sure you want to sign out?", [
-  //     { text: "Cancel", style: "cancel" },
-  //     {
-  //       text: "Sign out",
-  //       style: "destructive",
-  //       onPress: async () => {
-  //         setSigningOut(true);
-  //         await signOut();
-  //       },
-  //     },
-  //   ]);
-  // };
+  if (authLoading) {
+    return null;
+  }
+
+  const fullName = user?.user_metadata?.full_name || "—";
+  const memberSince = user?.created_at
+    ? new Date(user.created_at).toLocaleString("default", {
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+
+  const totalTracked = totalsData?.totalTracked || 0;
+
+  // Handle loading state for totals
+  const isTotalsLoading = false;
+
+  const formatTotalTracked = (amount: number) => {
+    if (amount >= 100000) {
+      return `₹${(amount / 100000).toFixed(1)}L`;
+    } else if (amount >= 1000) {
+      return `₹${(amount / 1000).toFixed(0)}K`;
+    }
+    return `₹${amount}`;
+  };
+
   const handleSignOut = () => {
     const confirmed =
       Platform.OS === "web"
-        ? Promise.resolve(window.confirm("Are you sure you want to sign out?")) // Web: native browser confirm
+        ? Promise.resolve(window.confirm("Are you sure you want to sign out?"))
         : new Promise((resolve) => {
-            // Mobile: React Native Alert
             Alert.alert("Sign out", "Are you sure you want to sign out?", [
               { text: "Cancel", onPress: () => resolve(false) },
               {
@@ -87,10 +106,9 @@ export default function ProfileScreen() {
     );
   };
 
-  const totalIncome = data?.totalIncome ?? 0;
-  const savingsGoal = data?.savingsGoal ?? 0;
-  const cardCount = data?.creditCards?.length ?? 0;
-  const available = totalIncome - savingsGoal;
+  const handleComingSoon = () => {
+    Alert.alert("Coming Soon", "This feature will be available soon.");
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -98,170 +116,231 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={[styles.avatar, { backgroundColor: theme.veloBlue }]}>
-            <Zap size={28} color="#FFFFFF" />
+        {/* Page Header */}
+        <View style={styles.pageHeader}>
+          <Text style={[styles.pageTitle, { color: theme.text }]}>Profile</Text>
+          <Text style={[styles.pageSubtitle, { color: theme.subtext }]}>
+            Manage your account and preferences
+          </Text>
+        </View>
+
+        {/* Hero Card */}
+        <View style={[styles.heroCard, { backgroundColor: theme.veloBlue }]}>
+          <View style={styles.heroContent}>
+            <View style={styles.avatarCircle}>
+              <User size={24} color="#FFFFFF" />
+            </View>
+            <View style={styles.heroText}>
+              <Text style={styles.heroName}>{fullName}</Text>
+              <Text style={styles.heroEmail}>{user?.email ?? "—"}</Text>
+            </View>
           </View>
-          <View style={styles.headerText}>
-            <Text style={[styles.email, { color: theme.text }]}>
-              {user?.email ?? "—"}
-            </Text>
-            <Text style={[styles.joined, { color: theme.subtext }]}>
-              Member since{" "}
-              {user?.created_at ? new Date(user.created_at).getFullYear() : "—"}
-            </Text>
+          <View
+            style={[
+              styles.heroDivider,
+              { backgroundColor: "rgba(255,255,255,0.2)" },
+            ]}
+          />
+          <View style={styles.heroStats}>
+            <View>
+              <Text style={styles.heroStatLabel}>Member Since</Text>
+              <Text style={styles.heroStatValue}>{memberSince}</Text>
+            </View>
+            <View style={styles.heroStatDivider} />
+            <View>
+              <Text style={styles.heroStatLabel}>Total Tracked</Text>
+              <Text style={styles.heroStatValue}>
+                {formatTotalTracked(totalTracked)}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Budget snapshot */}
-        {data && (
-          <>
-            <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-              BUDGET SNAPSHOT
-            </Text>
-            <View style={styles.snapshotRow}>
-              <View
-                style={[
-                  styles.snapshotCard,
-                  { backgroundColor: theme.surface },
-                ]}
-              >
-                <TrendingUp size={18} color={theme.veloBlue} />
-                <Text style={[styles.snapshotAmount, { color: theme.text }]}>
-                  ₹{totalIncome.toLocaleString()}
-                </Text>
-                <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>
-                  Income
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.snapshotCard,
-                  { backgroundColor: theme.surface },
-                ]}
-              >
-                <Target size={18} color="#F59E0B" />
-                <Text style={[styles.snapshotAmount, { color: theme.text }]}>
-                  {savingsGoal > 0 ? `₹${savingsGoal.toLocaleString()}` : "—"}
-                </Text>
-                <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>
-                  Savings
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.snapshotCard,
-                  { backgroundColor: theme.surface },
-                ]}
-              >
-                <CreditCard size={18} color="#10B981" />
-                <Text style={[styles.snapshotAmount, { color: theme.text }]}>
-                  {cardCount}
-                </Text>
-                <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>
-                  Cards
-                </Text>
-              </View>
-            </View>
-
-            {available > 0 && (
-              <View
-                style={[
-                  styles.availableBox,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <Text style={[styles.availableLabel, { color: theme.subtext }]}>
-                  Available for Spending
-                </Text>
-                <Text
-                  style={[styles.availableAmount, { color: theme.veloBlue }]}
-                >
-                  ₹{available.toLocaleString()}
-                </Text>
-                <Text style={[styles.availableMeta, { color: theme.subtext }]}>
-                  per month
-                </Text>
-              </View>
-            )}
-          </>
-        )}
-
-        {/* Settings */}
+        {/* FINANCIAL */}
         <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-          BUDGET SETTINGS
+          FINANCIAL
         </Text>
-        <Card padding={0} style={styles.settingsCard}>
+        <Card padding={0} style={styles.sectionCard}>
           <TouchableOpacity
-            style={[styles.settingsRow, { borderBottomColor: theme.border }]}
-            onPress={() => router.push("/transactions")}
-            activeOpacity={0.7}
-          >
-            <View
-              style={[
-                styles.settingsIcon,
-                { backgroundColor: theme.veloBlueDim },
-              ]}
-            >
-              <List size={16} color={theme.veloBlue} />
-            </View>
-            <View style={styles.settingsLabel}>
-              <Text style={[styles.settingsText, { color: theme.text }]}>
-                View Transactions
-              </Text>
-              <Text style={[styles.settingsMeta, { color: theme.subtext }]}>
-                Browse & filter your spending history
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.settingsRow, { borderBottomColor: theme.border }]}
+            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
             onPress={handleResetOnboarding}
             activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.settingsIcon,
-                { backgroundColor: theme.veloBlueDim },
-              ]}
-            >
-              <RefreshCw size={16} color={theme.veloBlue} />
-            </View>
-            <View style={styles.settingsLabel}>
-              <Text style={[styles.settingsText, { color: theme.text }]}>
-                Edit Budget Setup
-              </Text>
-              <Text style={[styles.settingsMeta, { color: theme.subtext }]}>
-                Update income, cards & savings goal
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <DollarSign size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Budget Settings
               </Text>
             </View>
             <ChevronRight size={16} color={theme.subtext} />
           </TouchableOpacity>
         </Card>
 
-        {/* Account */}
+        {/* ACCOUNT */}
         <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
           ACCOUNT
         </Text>
-        <Card padding={0} style={styles.settingsCard}>
+        <Card padding={0} style={styles.sectionCard}>
           <TouchableOpacity
-            style={styles.settingsRow}
+            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+            onPress={handleComingSoon}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <UserCircle size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Personal Information
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+            onPress={handleComingSoon}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <Bell size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Notifications
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sectionRow}
+            onPress={handleComingSoon}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <Lock size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Privacy & Security
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
+        </Card>
+
+        {/* PREFERENCES */}
+        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+          PREFERENCES
+        </Text>
+        <Card padding={0} style={styles.sectionCard}>
+          <TouchableOpacity
+            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+            onPress={handleComingSoon}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <Palette size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Appearance
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
+          <View
+            style={[styles.sectionRow, { justifyContent: "space-between" }]}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <Moon size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Dark Mode
+              </Text>
+            </View>
+            <Switch
+              value={themeMode === "dark"}
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.border, true: theme.veloBlue }}
+              thumbColor={themeMode === "dark" ? "#FFFFFF" : theme.surface}
+            />
+          </View>
+        </Card>
+
+        {/* SUPPORT */}
+        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+          SUPPORT
+        </Text>
+        <Card padding={0} style={styles.sectionCard}>
+          <TouchableOpacity
+            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+            onPress={handleComingSoon}
+            activeOpacity={0.7}
+          >
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <HelpCircle size={18} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.text }]}>
+                Help & Feedback
+              </Text>
+            </View>
+            <ChevronRight size={16} color={theme.subtext} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sectionRow}
             onPress={handleSignOut}
             disabled={signingOut}
             activeOpacity={0.7}
           >
-            <View
-              style={[
-                styles.settingsIcon,
-                { backgroundColor: theme.dangerDim },
-              ]}
-            >
-              <LogOut size={16} color={theme.danger} />
-            </View>
-            <View style={styles.settingsLabel}>
-              <Text style={[styles.settingsText, { color: theme.danger }]}>
+            <View style={styles.sectionRowLeft}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: theme.dangerDim },
+                ]}
+              >
+                <LogOut size={18} color={theme.danger} />
+              </View>
+              <Text style={[styles.sectionText, { color: theme.danger }]}>
                 Sign Out
               </Text>
             </View>
@@ -275,22 +354,70 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: 20, paddingBottom: 40 },
-  header: {
+  pageHeader: { marginBottom: 24 },
+  pageTitle: {
+    fontSize: 28,
+    fontFamily: "Inter-Bold",
+    marginBottom: 4,
+  },
+  pageSubtitle: {
+    fontSize: 14,
+    fontFamily: "Inter-Regular",
+  },
+  heroCard: {
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 24,
+  },
+  heroContent: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginBottom: 28,
+    marginBottom: 16,
   },
-  avatar: {
+  avatarCircle: {
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
-  headerText: { flex: 1, gap: 4 },
-  email: { fontSize: 16, fontFamily: "Inter-Bold" },
-  joined: { fontSize: 13, fontFamily: "Inter-Regular" },
+  heroText: { flex: 1 },
+  heroName: {
+    fontSize: 18,
+    fontFamily: "Inter-Bold",
+    color: "#FFFFFF",
+    marginBottom: 4,
+  },
+  heroEmail: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: "rgba(255,255,255,0.7)",
+  },
+  heroDivider: {
+    height: 1,
+    marginBottom: 16,
+  },
+  heroStats: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  heroStatLabel: {
+    fontSize: 11,
+    fontFamily: "Inter-Regular",
+    color: "rgba(255,255,255,0.7)",
+    marginBottom: 4,
+  },
+  heroStatValue: {
+    fontSize: 16,
+    fontFamily: "Inter-Bold",
+    color: "#FFFFFF",
+  },
+  heroStatDivider: {
+    width: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
   sectionTitle: {
     fontSize: 11,
     fontFamily: "Inter-Bold",
@@ -298,47 +425,35 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: 4,
   },
-  snapshotRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-  snapshotCard: {
-    flex: 1,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: "center",
-    gap: 6,
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  snapshotAmount: { fontSize: 16, fontFamily: "Inter-Bold" },
-  snapshotLabel: { fontSize: 11, fontFamily: "Inter-Regular" },
-  availableBox: {
-    borderRadius: 14,
-    padding: 16,
-    alignItems: "center",
-    gap: 4,
+  sectionCard: {
     marginBottom: 20,
+    borderRadius: 14,
+    overflow: "hidden",
   },
-  availableLabel: { fontSize: 12, fontFamily: "Inter-Regular" },
-  availableAmount: { fontSize: 28, fontFamily: "Inter-Black" },
-  availableMeta: { fontSize: 12, fontFamily: "Inter-Regular" },
-  settingsCard: { marginBottom: 20, borderRadius: 14, overflow: "hidden" },
-  settingsRow: {
+  sectionRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 14,
     gap: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
+    justifyContent: "space-between",
   },
-  settingsIcon: {
-    width: 34,
-    height: 34,
+  sectionRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+  },
+  sectionIcon: {
+    width: 36,
+    height: 36,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  settingsLabel: { flex: 1, gap: 2 },
-  settingsText: { fontSize: 15, fontFamily: "Inter-Bold" },
-  settingsMeta: { fontSize: 12, fontFamily: "Inter-Regular" },
+  sectionText: {
+    fontSize: 15,
+    fontFamily: "Inter-Medium",
+  },
 });
