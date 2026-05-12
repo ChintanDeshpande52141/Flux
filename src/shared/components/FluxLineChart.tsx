@@ -22,7 +22,7 @@ type Props = {
 
 export const FluxLineChart = ({
   data,
-  height = 120,
+  height = 180,
   color,
   showRules = false,
   showYAxis = false,
@@ -34,6 +34,17 @@ export const FluxLineChart = ({
   const theme = useTheme();
   const chartColor = color ?? theme.veloBlue;
   const [chartWidth, setChartWidth] = useState(0);
+
+  const maxVal = data.length > 0 ? Math.max(...data.map((d) => d.value)) : 0;
+  const minVal = data.length > 0 ? Math.min(...data.map((d) => d.value)) : 0;
+
+  // Shift all values up by 15% of the range so low-value dots never sit
+  // at the bottom boundary and get clipped
+  const range = maxVal - minVal;
+  const bottomPad = range > 0 ? range * 0.2 : maxVal * 0.2;
+  const shiftedData = data.map((d) => ({ ...d, value: d.value + bottomPad }));
+  const maxValue =
+    maxVal > 0 ? Math.ceil((maxVal + bottomPad) * 1.15) : undefined;
 
   // gifted-charts always reserves a fixed dp strip for the y-axis to the
   // left of the chart viewport. Subtract it so the visible area matches
@@ -52,11 +63,11 @@ export const FluxLineChart = ({
   return (
     <View
       onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}
-      style={{ overflow: "hidden" }}
+      style={{ overflow: "visible", paddingTop: 15, paddingBottom: 15 }}
     >
       {chartAreaWidth > 0 && (
         <LineChart
-          data={data}
+          data={shiftedData}
           width={chartAreaWidth}
           spacing={spacing}
           disableScroll
@@ -71,6 +82,7 @@ export const FluxLineChart = ({
           areaChart
           dataPointsColor={chartColor}
           dataPointsRadius={5}
+          maxValue={maxValue}
           hideRules={!showRules}
           rulesColor={theme.border}
           rulesType="solid"
