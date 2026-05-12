@@ -1,3 +1,4 @@
+import { useAuth } from "@/shared/context/AuthContext";
 import {
   useOnboarding,
   type CreditCard,
@@ -26,7 +27,201 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
+
+const COUNTRIES = [
+  { name: "India", currency: "INR" },
+  { name: "United States", currency: "USD" },
+  { name: "United Kingdom", currency: "GBP" },
+  { name: "Canada", currency: "CAD" },
+  { name: "Australia", currency: "AUD" },
+  { name: "Germany", currency: "EUR" },
+  { name: "France", currency: "EUR" },
+  { name: "Japan", currency: "JPY" },
+  { name: "Singapore", currency: "SGD" },
+  { name: "UAE", currency: "AED" },
+] as const;
+
+function Step1UserDetails({
+  fullName,
+  setFullName,
+  age,
+  setAge,
+  country,
+  setCountry,
+  profession,
+  setProfession,
+}: {
+  fullName: string;
+  setFullName: (v: string) => void;
+  age: string;
+  setAge: (v: string) => void;
+  country: string;
+  setCountry: (v: string) => void;
+  profession: string;
+  setProfession: (v: string) => void;
+}) {
+  const theme = useTheme();
+
+  return (
+    <ScrollView
+      contentContainerStyle={styles.stepContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <Text style={[styles.stepTitle, { color: theme.text }]}>
+        Let's get to know you
+      </Text>
+      <Text style={[styles.stepSubtitle, { color: theme.subtext }]}>
+        Tell us a bit about yourself so we can personalize your experience.
+      </Text>
+
+      <View
+        style={[
+          styles.sourceCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.cardFieldLabel, { color: theme.subtext }]}>
+          Full Name *
+        </Text>
+        <TextInput
+          style={[
+            styles.nameInput,
+            {
+              color: theme.text,
+              borderColor: theme.border,
+              backgroundColor: theme.surfaceVariant,
+            },
+          ]}
+          value={fullName}
+          onChangeText={setFullName}
+          placeholder="Enter your full name"
+          placeholderTextColor={theme.subtextLight}
+        />
+      </View>
+
+      <View
+        style={[
+          styles.sourceCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.cardFieldLabel, { color: theme.subtext }]}>
+          Age
+        </Text>
+        <TextInput
+          style={[
+            styles.nameInput,
+            {
+              color: theme.text,
+              borderColor: theme.border,
+              backgroundColor: theme.surfaceVariant,
+            },
+          ]}
+          value={age}
+          onChangeText={setAge}
+          placeholder="Your age"
+          placeholderTextColor={theme.subtextLight}
+          keyboardType="numeric"
+        />
+      </View>
+
+      <View
+        style={[
+          styles.sourceCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.cardFieldLabel, { color: theme.subtext }]}>
+          Country *
+        </Text>
+        <View
+          style={[
+            styles.nameInput,
+            {
+              borderColor: theme.border,
+              backgroundColor: theme.surfaceVariant,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            },
+          ]}
+        >
+          <Text style={{ color: theme.text }}>
+            {country || "Select your country"}
+          </Text>
+          <TouchableOpacity onPress={() => {}}>
+            <Text style={{ color: theme.veloBlue }}>Change</Text>
+          </TouchableOpacity>
+        </View>
+        <View
+          style={{
+            marginTop: 8,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          {COUNTRIES.map((c) => (
+            <TouchableOpacity
+              key={c.name}
+              style={[
+                styles.quickChip,
+                {
+                  borderColor:
+                    country === c.name ? theme.veloBlue : theme.border,
+                  backgroundColor:
+                    country === c.name
+                      ? theme.veloBlueDim
+                      : theme.surfaceVariant,
+                },
+              ]}
+              onPress={() => setCountry(c.name)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.quickChipText,
+                  {
+                    color: country === c.name ? theme.veloBlue : theme.subtext,
+                  },
+                ]}
+              >
+                {c.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View
+        style={[
+          styles.sourceCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
+        <Text style={[styles.cardFieldLabel, { color: theme.subtext }]}>
+          Profession
+        </Text>
+        <TextInput
+          style={[
+            styles.nameInput,
+            {
+              color: theme.text,
+              borderColor: theme.border,
+              backgroundColor: theme.surfaceVariant,
+            },
+          ]}
+          value={profession}
+          onChangeText={setProfession}
+          placeholder="e.g., Software Engineer, Student"
+          placeholderTextColor={theme.subtextLight}
+        />
+      </View>
+    </ScrollView>
+  );
+}
 
 function ProgressBar({ step }: { step: number }) {
   const theme = useTheme();
@@ -148,7 +343,7 @@ function AmountInput({
   );
 }
 
-function Step1Income({
+function Step2Income({
   sources,
   setSources,
 }: {
@@ -247,7 +442,7 @@ function Step1Income({
   );
 }
 
-function Step2Cards({
+function Step3Cards({
   cards,
   setCards,
 }: {
@@ -361,7 +556,7 @@ function Step2Cards({
   );
 }
 
-function Step3Savings({
+function Step4Savings({
   savingsGoal,
   setSavingsGoal,
   totalIncome,
@@ -468,7 +663,7 @@ function Step3Savings({
   );
 }
 
-function Step4Summary({
+function Step5Summary({
   sources,
   cards,
   savingsGoal,
@@ -599,9 +794,15 @@ export default function OnboardingScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { completeOnboarding } = useOnboarding();
+  const { updateProfile } = useAuth();
 
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  const [fullName, setFullName] = useState("");
+  const [age, setAge] = useState("");
+  const [country, setCountry] = useState("");
+  const [profession, setProfession] = useState("");
 
   const [sources, setSources] = useState<IncomeSource[]>([
     { name: "", amount: 0 },
@@ -612,9 +813,26 @@ export default function OnboardingScreen() {
   const totalIncome = sources.reduce((s, x) => s + (Number(x.amount) || 0), 0);
   const savingsGoal = Number(savingsGoalStr) || 0;
 
-  const canContinueStep1 = totalIncome > 0;
+  const canContinueStep1 = fullName.trim().length > 0 && country.length > 0;
+  const canContinueStep2 = totalIncome > 0;
 
-  const goNext = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  const goNext = async () => {
+    if (step === 1) {
+      const selectedCountry = COUNTRIES.find((c) => c.name === country);
+      try {
+        await updateProfile({
+          full_name: fullName.trim(),
+          age: Number(age) || undefined,
+          country,
+          currency: selectedCountry?.currency,
+          profession: profession.trim() || undefined,
+        });
+      } catch (err) {
+        console.error("Failed to update profile:", err);
+      }
+    }
+    setStep((s) => Math.min(s + 1, TOTAL_STEPS));
+  };
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleFinish = async () => {
@@ -638,18 +856,30 @@ export default function OnboardingScreen() {
 
         <View style={styles.flex}>
           {step === 1 && (
-            <Step1Income sources={sources} setSources={setSources} />
+            <Step1UserDetails
+              fullName={fullName}
+              setFullName={setFullName}
+              age={age}
+              setAge={setAge}
+              country={country}
+              setCountry={setCountry}
+              profession={profession}
+              setProfession={setProfession}
+            />
           )}
-          {step === 2 && <Step2Cards cards={cards} setCards={setCards} />}
-          {step === 3 && (
-            <Step3Savings
+          {step === 2 && (
+            <Step2Income sources={sources} setSources={setSources} />
+          )}
+          {step === 3 && <Step3Cards cards={cards} setCards={setCards} />}
+          {step === 4 && (
+            <Step4Savings
               savingsGoal={savingsGoalStr}
               setSavingsGoal={setSavingsGoalStr}
               totalIncome={totalIncome}
             />
           )}
-          {step === 4 && (
-            <Step4Summary
+          {step === 5 && (
+            <Step5Summary
               sources={sources}
               cards={cards}
               savingsGoal={savingsGoal}
@@ -671,6 +901,7 @@ export default function OnboardingScreen() {
             onContinue={goNext}
             onSkip={goNext}
             showSkip
+            continueDisabled={!canContinueStep2}
           />
         )}
         {step === 3 && (
@@ -682,6 +913,14 @@ export default function OnboardingScreen() {
           />
         )}
         {step === 4 && (
+          <NavBar
+            onBack={goBack}
+            onContinue={goNext}
+            onSkip={goNext}
+            showSkip
+          />
+        )}
+        {step === 5 && (
           <NavBar
             onBack={goBack}
             onContinue={handleFinish}

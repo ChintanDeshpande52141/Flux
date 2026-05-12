@@ -4,6 +4,7 @@ import {
   OnboardingProvider,
   useOnboarding,
 } from "@/shared/context/OnboardingContext";
+import { ThemeProvider } from "@/shared/context/ThemeContext";
 import {
   Inter_400Regular,
   Inter_700Bold,
@@ -93,31 +94,36 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <OnboardingProvider>
-          <AppShell fontsLoaded={fontsLoaded ?? false}>
-            <AuthGuard>
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="login" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="onboarding"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="spending-analysis"
-                  options={{ headerShown: false }}
-                />
-                <Stack.Screen
-                  name="transactions"
-                  options={{ headerShown: false }}
-                />
-              </Stack>
-              <StatusBar style="auto" />
-            </AuthGuard>
-          </AppShell>
-        </OnboardingProvider>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <OnboardingProvider>
+            <AppShell fontsLoaded={fontsLoaded ?? false}>
+              <AuthGuard>
+                <Stack>
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen name="login" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="onboarding"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="spending-analysis"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="transactions"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+                <StatusBar style="auto" />
+              </AuthGuard>
+            </AppShell>
+          </OnboardingProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
