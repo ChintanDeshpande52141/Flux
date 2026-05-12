@@ -118,7 +118,7 @@ export const AnalyticsScreen = () => (
 
 const styles = StyleSheet.create({
   container: { flex: 1, position: "relative" },
-  scroll: { padding: 20, paddingBottom: 70 },
+  scroll: { padding: 20, paddingBottom: 20 },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",

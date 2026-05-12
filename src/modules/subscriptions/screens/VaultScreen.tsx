@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20, paddingBottom: 20 },
   impactCard: { marginBottom: 24 },
   impactTop: { marginBottom: 16 },
   impactLabelRow: {

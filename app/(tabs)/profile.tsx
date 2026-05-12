@@ -353,7 +353,7 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { padding: 20, paddingBottom: 40 },
+  scroll: { padding: 20, paddingBottom: 20 },
   pageHeader: { marginBottom: 24 },
   pageTitle: {
     fontSize: 28,

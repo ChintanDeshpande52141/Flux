@@ -226,7 +226,7 @@ export const SpendingAnalysisScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   headerWrap: { paddingHorizontal: 20, paddingTop: 8 },
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
+  scroll: { paddingHorizontal: 20, paddingBottom: 20 },
   headerIcons: { flexDirection: "row", gap: 8 },
   iconBtn: {
     width: 34,
