@@ -117,6 +117,10 @@ export default function RootLayout() {
                     name="transactions"
                     options={{ headerShown: false }}
                   />
+                  <Stack.Screen
+                    name="budget-settings"
+                    options={{ headerShown: false }}
+                  />
                 </Stack>
                 <StatusBar style="auto" />
               </AuthGuard>
