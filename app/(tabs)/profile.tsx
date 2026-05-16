@@ -1,5 +1,6 @@
 import { useTotalTracked } from "@/modules/analytics/features/profile/hooks/useTotalTracked";
 import { Card } from "@/shared/components";
+import { PersonalInfoSheet } from "@/shared/components/PersonalInfoSheet";
 import { useAuth } from "@/shared/context/AuthContext";
 import { useOnboarding } from "@/shared/context/OnboardingContext";
 import { useThemeContext } from "@/shared/context/ThemeContext";
@@ -37,13 +38,17 @@ export default function ProfileScreen() {
   const { resetOnboarding } = useOnboarding();
   const { data: totalsData } = useTotalTracked();
   const { themeMode, toggleTheme } = useThemeContext();
+  const { updateProfile } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const [showPersonalInfoSheet, setShowPersonalInfoSheet] = useState(false);
 
   if (authLoading) {
     return null;
   }
 
-  const fullName = user?.user_metadata?.full_name || "—";
+  const [fullName, setFullName] = useState(
+    user?.user_metadata?.full_name || "—",
+  );
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleString("default", {
         month: "short",
@@ -63,6 +68,36 @@ export default function ProfileScreen() {
       return `₹${(amount / 1000).toFixed(0)}K`;
     }
     return `₹${amount}`;
+  };
+
+  const handleSavePersonalInfo = async (data: {
+    fullName: string;
+    age: string;
+    country: string;
+    profession: string;
+  }) => {
+    const COUNTRIES = [
+      { name: "India", currency: "INR" },
+      { name: "United States", currency: "USD" },
+      { name: "United Kingdom", currency: "GBP" },
+      { name: "Canada", currency: "CAD" },
+      { name: "Australia", currency: "AUD" },
+      { name: "Germany", currency: "EUR" },
+      { name: "France", currency: "EUR" },
+      { name: "Japan", currency: "JPY" },
+      { name: "Singapore", currency: "SGD" },
+      { name: "UAE", currency: "AED" },
+    ] as const;
+    const selectedCountry = COUNTRIES.find((c) => c.name === data.country);
+    await updateProfile({
+      full_name: data.fullName.trim(),
+      age: data.age ? Number(data.age) : undefined,
+      country: data.country,
+      currency: selectedCountry?.currency,
+      profession: data.profession.trim() || undefined,
+    });
+    // Optimistic UI update
+    setFullName(data.fullName.trim() || "—");
   };
 
   const handleSignOut = () => {
@@ -111,243 +146,255 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
+    <>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: theme.background }]}
       >
-        {/* Page Header */}
-        <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: theme.text }]}>Profile</Text>
-          <Text style={[styles.pageSubtitle, { color: theme.subtext }]}>
-            Manage your account and preferences
-          </Text>
-        </View>
-
-        {/* Hero Card */}
-        <View style={[styles.heroCard, { backgroundColor: theme.veloBlue }]}>
-          <View style={styles.heroContent}>
-            <View style={styles.avatarCircle}>
-              <User size={24} color="#FFFFFF" />
-            </View>
-            <View style={styles.heroText}>
-              <Text style={styles.heroName}>{fullName}</Text>
-              <Text style={styles.heroEmail}>{user?.email ?? "—"}</Text>
-            </View>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Page Header */}
+          <View style={styles.pageHeader}>
+            <Text style={[styles.pageTitle, { color: theme.text }]}>
+              Profile
+            </Text>
+            <Text style={[styles.pageSubtitle, { color: theme.subtext }]}>
+              Manage your account and preferences
+            </Text>
           </View>
-          <View
-            style={[
-              styles.heroDivider,
-              { backgroundColor: "rgba(255,255,255,0.2)" },
-            ]}
-          />
-          <View style={styles.heroStats}>
-            <View>
-              <Text style={styles.heroStatLabel}>Member Since</Text>
-              <Text style={styles.heroStatValue}>{memberSince}</Text>
-            </View>
-            <View style={styles.heroStatDivider} />
-            <View>
-              <Text style={styles.heroStatLabel}>Total Tracked</Text>
-              <Text style={styles.heroStatValue}>
-                {formatTotalTracked(totalTracked)}
-              </Text>
-            </View>
-          </View>
-        </View>
 
-        {/* FINANCIAL */}
-        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-          FINANCIAL
-        </Text>
-        <Card padding={0} style={styles.sectionCard}>
-          <TouchableOpacity
-            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
-            onPress={handleResetOnboarding}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <DollarSign size={18} color={theme.veloBlue} />
+          {/* Hero Card */}
+          <View style={[styles.heroCard, { backgroundColor: theme.veloBlue }]}>
+            <View style={styles.heroContent}>
+              <View style={styles.avatarCircle}>
+                <User size={24} color="#FFFFFF" />
               </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Budget Settings
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-        </Card>
-
-        {/* ACCOUNT */}
-        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-          ACCOUNT
-        </Text>
-        <Card padding={0} style={styles.sectionCard}>
-          <TouchableOpacity
-            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
-            onPress={handleComingSoon}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <UserCircle size={18} color={theme.veloBlue} />
+              <View style={styles.heroText}>
+                <Text style={styles.heroName}>{fullName}</Text>
+                <Text style={styles.heroEmail}>{user?.email ?? "—"}</Text>
               </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Personal Information
-              </Text>
             </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
-            onPress={handleComingSoon}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <Bell size={18} color={theme.veloBlue} />
-              </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Notifications
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sectionRow}
-            onPress={handleComingSoon}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <Lock size={18} color={theme.veloBlue} />
-              </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Privacy & Security
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-        </Card>
-
-        {/* PREFERENCES */}
-        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-          PREFERENCES
-        </Text>
-        <Card padding={0} style={styles.sectionCard}>
-          <TouchableOpacity
-            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
-            onPress={handleComingSoon}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <Palette size={18} color={theme.veloBlue} />
-              </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Appearance
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-          <View
-            style={[styles.sectionRow, { justifyContent: "space-between" }]}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <Moon size={18} color={theme.veloBlue} />
-              </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Dark Mode
-              </Text>
-            </View>
-            <Switch
-              value={themeMode === "dark"}
-              onValueChange={toggleTheme}
-              trackColor={{ false: theme.border, true: theme.veloBlue }}
-              thumbColor={themeMode === "dark" ? "#FFFFFF" : theme.surface}
+            <View
+              style={[
+                styles.heroDivider,
+                { backgroundColor: "rgba(255,255,255,0.2)" },
+              ]}
             />
+            <View style={styles.heroStats}>
+              <View>
+                <Text style={styles.heroStatLabel}>Member Since</Text>
+                <Text style={styles.heroStatValue}>{memberSince}</Text>
+              </View>
+              <View style={styles.heroStatDivider} />
+              <View>
+                <Text style={styles.heroStatLabel}>Total Tracked</Text>
+                <Text style={styles.heroStatValue}>
+                  {formatTotalTracked(totalTracked)}
+                </Text>
+              </View>
+            </View>
           </View>
-        </Card>
 
-        {/* SUPPORT */}
-        <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
-          SUPPORT
-        </Text>
-        <Card padding={0} style={styles.sectionCard}>
-          <TouchableOpacity
-            style={[styles.sectionRow, { borderBottomColor: theme.border }]}
-            onPress={handleComingSoon}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.veloBlueDim },
-                ]}
-              >
-                <HelpCircle size={18} color={theme.veloBlue} />
+          {/* FINANCIAL */}
+          <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+            FINANCIAL
+          </Text>
+          <Card padding={0} style={styles.sectionCard}>
+            <TouchableOpacity
+              style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+              onPress={() => router.push("/budget-settings")}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <DollarSign size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Budget Settings
+                </Text>
               </View>
-              <Text style={[styles.sectionText, { color: theme.text }]}>
-                Help & Feedback
-              </Text>
-            </View>
-            <ChevronRight size={16} color={theme.subtext} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.sectionRow}
-            onPress={handleSignOut}
-            disabled={signingOut}
-            activeOpacity={0.7}
-          >
-            <View style={styles.sectionRowLeft}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: theme.dangerDim },
-                ]}
-              >
-                <LogOut size={18} color={theme.danger} />
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+          </Card>
+
+          {/* ACCOUNT */}
+          <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+            ACCOUNT
+          </Text>
+          <Card padding={0} style={styles.sectionCard}>
+            <TouchableOpacity
+              style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+              onPress={() => setShowPersonalInfoSheet(true)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <UserCircle size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Personal Information
+                </Text>
               </View>
-              <Text style={[styles.sectionText, { color: theme.danger }]}>
-                Sign Out
-              </Text>
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+              onPress={handleComingSoon}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <Bell size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Notifications
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sectionRow}
+              onPress={handleComingSoon}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <Lock size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Privacy & Security
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+          </Card>
+
+          {/* PREFERENCES */}
+          <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+            PREFERENCES
+          </Text>
+          <Card padding={0} style={styles.sectionCard}>
+            <TouchableOpacity
+              style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+              onPress={handleComingSoon}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <Palette size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Appearance
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+            <View
+              style={[styles.sectionRow, { justifyContent: "space-between" }]}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <Moon size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Dark Mode
+                </Text>
+              </View>
+              <Switch
+                value={themeMode === "dark"}
+                onValueChange={toggleTheme}
+                trackColor={{ false: theme.border, true: theme.veloBlue }}
+                thumbColor={themeMode === "dark" ? "#FFFFFF" : theme.surface}
+              />
             </View>
-          </TouchableOpacity>
-        </Card>
-      </ScrollView>
-    </SafeAreaView>
+          </Card>
+
+          {/* SUPPORT */}
+          <Text style={[styles.sectionTitle, { color: theme.subtext }]}>
+            SUPPORT
+          </Text>
+          <Card padding={0} style={styles.sectionCard}>
+            <TouchableOpacity
+              style={[styles.sectionRow, { borderBottomColor: theme.border }]}
+              onPress={handleComingSoon}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.veloBlueDim },
+                  ]}
+                >
+                  <HelpCircle size={18} color={theme.veloBlue} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.text }]}>
+                  Help & Feedback
+                </Text>
+              </View>
+              <ChevronRight size={16} color={theme.subtext} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.sectionRow}
+              onPress={handleSignOut}
+              disabled={signingOut}
+              activeOpacity={0.7}
+            >
+              <View style={styles.sectionRowLeft}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: theme.dangerDim },
+                  ]}
+                >
+                  <LogOut size={18} color={theme.danger} />
+                </View>
+                <Text style={[styles.sectionText, { color: theme.danger }]}>
+                  Sign Out
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+
+      <PersonalInfoSheet
+        visible={showPersonalInfoSheet}
+        onClose={() => setShowPersonalInfoSheet(false)}
+        onSave={handleSavePersonalInfo}
+      />
+    </>
   );
 }
 
