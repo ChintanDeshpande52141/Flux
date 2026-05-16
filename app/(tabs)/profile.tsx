@@ -1,4 +1,5 @@
 import { useTotalTracked } from "@/modules/analytics/features/profile/hooks/useTotalTracked";
+import { useSafeToSpend } from "@/modules/analytics/features/safeToSpend/hooks/useSafeToSpend";
 import { Card } from "@/shared/components";
 import { PersonalInfoSheet } from "@/shared/components/PersonalInfoSheet";
 import { useAuth } from "@/shared/context/AuthContext";
@@ -15,8 +16,11 @@ import {
   LogOut,
   Moon,
   Palette,
+  Target,
+  TrendingUp,
   User,
   UserCircle,
+  Zap,
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -35,8 +39,9 @@ export default function ProfileScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { user, signOut, loading: authLoading } = useAuth();
-  const { resetOnboarding } = useOnboarding();
+  const { resetOnboarding, data: onboardingData } = useOnboarding();
   const { data: totalsData } = useTotalTracked();
+  const { data: safeToSpendData } = useSafeToSpend();
   const { themeMode, toggleTheme } = useThemeContext();
   const { updateProfile } = useAuth();
   const [signingOut, setSigningOut] = useState(false);
@@ -193,6 +198,84 @@ export default function ProfileScreen() {
                   {formatTotalTracked(totalTracked)}
                 </Text>
               </View>
+            </View>
+          </View>
+
+          {/* Snapshot Cards */}
+          <View style={styles.snapshotRow}>
+            {/* Monthly Income */}
+            <View
+              style={[
+                styles.snapshotCard,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              <View
+                style={[
+                  styles.snapshotIconBadge,
+                  { backgroundColor: theme.veloBlueDim },
+                ]}
+              >
+                <TrendingUp size={14} color={theme.veloBlue} />
+              </View>
+              <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>
+                Income
+              </Text>
+              <Text style={[styles.snapshotValue, { color: theme.text }]}>
+                {onboardingData?.totalIncome
+                  ? `₹${onboardingData.totalIncome.toLocaleString()}`
+                  : "—"}
+              </Text>
+            </View>
+            {/* Savings Goal */}
+            <View
+              style={[
+                styles.snapshotCard,
+                { backgroundColor: theme.surface, borderColor: theme.border },
+              ]}
+            >
+              <View
+                style={[
+                  styles.snapshotIconBadge,
+                  { backgroundColor: "rgba(251,146,60,0.15)" },
+                ]}
+              >
+                <Target size={14} color="#F97316" />
+              </View>
+              <Text style={[styles.snapshotLabel, { color: theme.subtext }]}>
+                Savings
+              </Text>
+              <Text style={[styles.snapshotValue, { color: theme.text }]}>
+                {onboardingData?.savingsGoal
+                  ? `₹${onboardingData.savingsGoal.toLocaleString()}`
+                  : "—"}
+              </Text>
+            </View>
+            {/* Safe-to-Spend */}
+            <View
+              style={[styles.snapshotCard, { backgroundColor: theme.veloBlue }]}
+            >
+              <View
+                style={[
+                  styles.snapshotIconBadge,
+                  { backgroundColor: "rgba(255,255,255,0.2)" },
+                ]}
+              >
+                <Zap size={14} color="#FFFFFF" fill="#FFFFFF" />
+              </View>
+              <Text
+                style={[
+                  styles.snapshotLabel,
+                  { color: "rgba(255,255,255,0.75)" },
+                ]}
+              >
+                Safe Spend
+              </Text>
+              <Text style={[styles.snapshotValue, { color: "#FFFFFF" }]}>
+                {safeToSpendData
+                  ? `₹${safeToSpendData.amount.toLocaleString()}`
+                  : "—"}
+              </Text>
             </View>
           </View>
 
@@ -502,5 +585,34 @@ const styles = StyleSheet.create({
   sectionText: {
     fontSize: 15,
     fontFamily: "Inter-Medium",
+  },
+  snapshotRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 20,
+  },
+  snapshotCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 6,
+  },
+  snapshotIconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 2,
+  },
+  snapshotLabel: {
+    fontSize: 10,
+    fontFamily: "Inter-Bold",
+    letterSpacing: 0.3,
+  },
+  snapshotValue: {
+    fontSize: 14,
+    fontFamily: "Inter-Black",
   },
 });

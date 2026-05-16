@@ -2,6 +2,24 @@ import { supabase } from "@/shared/services/supabaseClient";
 import { Session, User } from "@supabase/supabase-js";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+export type SavingsGoal = {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string;
+  priority: "high" | "medium" | "low";
+};
+
+export type CategoryBudget = {
+  id: string;
+  name: string;
+  budgetLimit: number;
+  spentAmount: number;
+  icon: string;
+  color: string;
+};
+
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
@@ -16,6 +34,7 @@ type AuthContextValue = {
     profession?: string;
     currency?: string;
   }) => Promise<void>;
+  updateMeta: (data: Record<string, unknown>) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -61,9 +80,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profession?: string;
     currency?: string;
   }) => {
-    await supabase.auth.updateUser({
-      data,
-    });
+    await supabase.auth.updateUser({ data });
+  };
+
+  const updateMeta = async (data: Record<string, unknown>) => {
+    await supabase.auth.updateUser({ data });
   };
 
   return (
@@ -76,6 +97,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         signUp,
         signOut,
         updateProfile,
+        updateMeta,
       }}
     >
       {children}

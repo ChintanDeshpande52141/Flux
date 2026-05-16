@@ -121,6 +121,22 @@ export default function RootLayout() {
                     name="budget-settings"
                     options={{ headerShown: false }}
                   />
+                  <Stack.Screen
+                    name="savings-goals"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="category-budgets"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="income-settings"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="cards-settings"
+                    options={{ headerShown: false }}
+                  />
                 </Stack>
                 <StatusBar style="auto" />
               </AuthGuard>

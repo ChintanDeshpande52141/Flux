@@ -1,6 +1,6 @@
 import { useAuth } from "@/shared/context/AuthContext";
 import { apiGet, apiPatch, apiPost } from "@/shared/services/apiClient";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useContext, useState } from "react";
 
 export type IncomeSource = { name: string; amount: number };
@@ -43,6 +43,7 @@ export const OnboardingProvider = ({
   children: React.ReactNode;
 }) => {
   const { session } = useAuth();
+  const queryClient = useQueryClient();
   const [onboarded, setOnboarded] = useState(false);
   const [data, setData] = useState<OnboardingData | null>(null);
 
@@ -91,6 +92,7 @@ export const OnboardingProvider = ({
     });
     setData(d);
     setOnboarded(true);
+    queryClient.invalidateQueries({ queryKey: ["safe-to-spend"] });
   };
 
   const resetOnboarding = async () => {
@@ -110,6 +112,7 @@ export const OnboardingProvider = ({
       payload.savings_goal = partial.savingsGoal;
 
     await apiPatch("/onboarding", payload);
+    queryClient.invalidateQueries({ queryKey: ["safe-to-spend"] });
 
     const next = {
       ...(data ?? {
