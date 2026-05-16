@@ -1,20 +1,20 @@
-import {
-  Step2Income,
-  Step3Cards,
-  Step4Savings,
-} from "@/modules/onboarding/components";
-import {
-  useOnboarding,
-  type CreditCard,
-  type IncomeSource,
-} from "@/shared/context/OnboardingContext";
+import { useSafeToSpend } from "@/modules/analytics/features/safeToSpend/hooks/useSafeToSpend";
+import { useSubscriptionList } from "@/modules/subscriptions/features/subscriptionList/hooks/useSubscriptionList";
+import { useOnboarding } from "@/shared/context/OnboardingContext";
 import { useTheme } from "@/shared/theme";
-import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
 import {
-  Alert,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  DollarSign,
+  Target,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from "lucide-react-native";
+import React from "react";
+import {
   ScrollView,
   StyleSheet,
   Text,
@@ -26,256 +26,274 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function BudgetSettingsScreen() {
   const theme = useTheme();
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const { data: onboardingData, updateData, resetOnboarding } = useOnboarding();
+  const { data: onboardingData } = useOnboarding();
+  const { data: safeToSpendData } = useSafeToSpend();
+  const { data: subscriptionData } = useSubscriptionList();
 
-  const [sources, setSources] = useState<IncomeSource[]>([]);
-  const [cards, setCards] = useState<CreditCard[]>([]);
-  const [savingsGoalStr, setSavingsGoalStr] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  const totalIncome = sources.reduce((s, x) => s + (Number(x.amount) || 0), 0);
-  const savingsGoal = Number(savingsGoalStr) || 0;
-  const totalCardLimit = cards.reduce((s, c) => s + c.limit, 0);
-  const safeToSpend = totalIncome - savingsGoal;
-
-  // Original data for dirty check
-  const [originalData, setOriginalData] = useState({
-    sources: [] as IncomeSource[],
-    cards: [] as CreditCard[],
-    savingsGoal: 0,
-  });
-
-  const hasChanges =
-    JSON.stringify({ sources, cards, savingsGoal }) !==
-    JSON.stringify(originalData);
-
-  // Load data from context
-  useEffect(() => {
-    if (onboardingData) {
-      const loadedSources = onboardingData.incomeSources || [];
-      const loadedCards = onboardingData.creditCards || [];
-      const loadedSavingsGoal = onboardingData.savingsGoal || 0;
-
-      setSources(
-        loadedSources.length > 0 ? loadedSources : [{ name: "", amount: 0 }],
-      );
-      setCards(loadedCards);
-      setSavingsGoalStr(String(loadedSavingsGoal));
-      setOriginalData({
-        sources:
-          loadedSources.length > 0 ? loadedSources : [{ name: "", amount: 0 }],
-        cards: loadedCards,
-        savingsGoal: loadedSavingsGoal,
-      });
-    }
-  }, [onboardingData]);
-
-  const handleDiscard = () => {
-    setSources(originalData.sources);
-    setCards(originalData.cards);
-    setSavingsGoalStr(String(originalData.savingsGoal));
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await updateData({
-        incomeSources: sources.filter((s) => s.amount > 0),
-        creditCards: cards,
-        totalIncome,
-        savingsGoal,
-      });
-      setOriginalData({
-        sources: [...sources],
-        cards: [...cards],
-        savingsGoal,
-      });
-      // Invalidate safe-to-spend query to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["safe-to-spend"] });
-      Alert.alert("Success", "Budget settings updated successfully.");
-    } catch (error) {
-      Alert.alert(
-        "Error",
-        "Failed to update budget settings. Please try again.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleReset = () => {
-    Alert.alert(
-      "Confirm Reset",
-      "This will clear your budget setup and take you back to onboarding. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: async () => {
-            await resetOnboarding();
-            router.replace("/onboarding");
-          },
-        },
-      ],
-    );
-  };
+  const totalIncome = onboardingData?.totalIncome ?? 0;
+  const savingsGoal = onboardingData?.savingsGoal ?? 0;
+  const cardCount = onboardingData?.creditCards?.length ?? 0;
+  const totalCardLimit =
+    onboardingData?.creditCards?.reduce((s, c) => s + c.limit, 0) ?? 0;
+  const safeToSpend = safeToSpendData?.amount ?? 0;
+  const totalMonthlyBills = subscriptionData?.totalMonthly ?? 0;
+  const fmt = (n: number) => `₹${n.toLocaleString()}`;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
+      {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.border }]}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={[styles.backBtn, { backgroundColor: theme.surfaceVariant }]}
-          hitSlop={8}
           activeOpacity={0.7}
         >
           <ChevronLeft size={20} color={theme.text} />
         </TouchableOpacity>
-        <View style={styles.titleBlock}>
-          <Text style={[styles.title, { color: theme.text }]}>
+        <View style={styles.headerText}>
+          <Text style={[styles.headerTitle, { color: theme.text }]}>
             Budget Settings
           </Text>
+          <Text style={[styles.headerSub, { color: theme.subtext }]}>
+            Manage your financial configuration
+          </Text>
         </View>
-        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView
-        style={styles.content}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
       >
-        {/* Income Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Income
-            </Text>
-            <View
-              style={[
-                styles.summaryChip,
-                {
-                  backgroundColor: theme.veloBlueDim,
-                  borderColor: theme.veloBlue,
-                },
-              ]}
-            >
-              <Text style={[styles.summaryChipText, { color: theme.veloBlue }]}>
-                Total: ₹{totalIncome.toLocaleString()}
+        {/* Safe-to-Spend Hero Card */}
+        <View style={[styles.heroCard, { backgroundColor: theme.veloBlue }]}>
+          <View style={styles.heroTop}>
+            <View>
+              <Text style={styles.heroLabel}>Current Safe-to-Spend</Text>
+              <Text style={styles.heroAmount}>{fmt(safeToSpend)}</Text>
+            </View>
+            <View style={styles.heroBadge}>
+              <Zap size={18} color="#FFFFFF" fill="#FFFFFF" />
+            </View>
+          </View>
+          <View style={styles.heroBreakdown}>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroRowLabel}>Monthly Income</Text>
+              <Text style={styles.heroRowValue}>{fmt(totalIncome)}</Text>
+            </View>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroRowLabel}>– Fixed Bills</Text>
+              <Text style={styles.heroRowValue}>{fmt(totalMonthlyBills)}</Text>
+            </View>
+            <View style={styles.heroRow}>
+              <Text style={styles.heroRowLabel}>– Savings Goal</Text>
+              <Text style={styles.heroRowValue}>{fmt(savingsGoal)}</Text>
+            </View>
+            <View style={[styles.heroRow, styles.heroRowSeparator]}>
+              <Text style={styles.heroRowLabel}>= Safe-to-Spend</Text>
+              <Text style={[styles.heroRowValue, styles.heroRowHighlight]}>
+                {fmt(safeToSpend)}
               </Text>
             </View>
           </View>
-          <Step2Income
-            sources={sources}
-            setSources={setSources}
-            mode="settings"
-          />
         </View>
 
-        {/* Cards Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Credit Cards
-            </Text>
-            {totalCardLimit > 0 && (
-              <View
-                style={[
-                  styles.summaryChip,
-                  {
-                    backgroundColor: theme.veloBlueDim,
-                    borderColor: theme.veloBlue,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.summaryChipText, { color: theme.veloBlue }]}
-                >
-                  Limit: ₹{totalCardLimit.toLocaleString()}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Step3Cards cards={cards} setCards={setCards} mode="settings" />
-        </View>
-
-        {/* Savings Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.text }]}>
-              Savings Goal
-            </Text>
-            {safeToSpend > 0 && (
-              <View
-                style={[
-                  styles.summaryChip,
-                  {
-                    backgroundColor: theme.veloBlueDim,
-                    borderColor: theme.veloBlue,
-                  },
-                ]}
-              >
-                <Text
-                  style={[styles.summaryChipText, { color: theme.veloBlue }]}
-                >
-                  Safe-to-spend: ₹{safeToSpend.toLocaleString()}
-                </Text>
-              </View>
-            )}
-          </View>
-          <Step4Savings
-            savingsGoal={savingsGoalStr}
-            setSavingsGoal={setSavingsGoalStr}
-            totalIncome={totalIncome}
-            mode="settings"
-          />
-        </View>
-
-        {/* Reset Button */}
-        <TouchableOpacity
-          style={[styles.resetBtn, { borderColor: theme.danger }]}
-          onPress={handleReset}
-          activeOpacity={0.7}
+        {/* Nav Rows */}
+        <View
+          style={[
+            styles.navCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
         >
-          <Text style={[styles.resetBtnText, { color: theme.danger }]}>
-            Reset Budget Setup
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      {/* Footer with Save/Discard */}
-      <View style={[styles.footer, { borderTopColor: theme.border }]}>
-        <TouchableOpacity
-          style={[styles.discardBtn, { borderColor: theme.border }]}
-          onPress={handleDiscard}
-          disabled={!hasChanges}
-          activeOpacity={0.7}
-        >
-          <Text
+          <TouchableOpacity
             style={[
-              styles.discardBtnText,
-              { color: hasChanges ? theme.subtext : theme.subtextLight },
+              styles.navRow,
+              {
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: theme.border,
+              },
+            ]}
+            onPress={() => router.push("/income-settings")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.navRowIcon,
+                { backgroundColor: theme.veloBlueDim },
+              ]}
+            >
+              <DollarSign size={18} color={theme.veloBlue} />
+            </View>
+            <View style={styles.navRowText}>
+              <Text style={[styles.navRowLabel, { color: theme.text }]}>
+                Income & Earnings
+              </Text>
+              <Text style={[styles.navRowSub, { color: theme.subtext }]}>
+                Monthly income
+              </Text>
+            </View>
+            <Text style={[styles.navRowValue, { color: theme.subtext }]}>
+              {`₹${totalIncome.toLocaleString()}`}
+            </Text>
+            <ChevronRight size={16} color={theme.subtextLight} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.navRow,
+              {
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: theme.border,
+              },
+            ]}
+            onPress={() => router.push("/cards-settings")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.navRowIcon,
+                { backgroundColor: theme.veloBlueDim },
+              ]}
+            >
+              <CreditCard size={18} color={theme.veloBlue} />
+            </View>
+            <View style={styles.navRowText}>
+              <Text style={[styles.navRowLabel, { color: theme.text }]}>
+                Credit Cards
+              </Text>
+              <Text style={[styles.navRowSub, { color: theme.subtext }]}>
+                {`₹${totalCardLimit.toLocaleString()} total limit`}
+              </Text>
+            </View>
+            <Text style={[styles.navRowValue, { color: theme.subtext }]}>
+              {`${cardCount} ${cardCount === 1 ? "Card" : "Cards"}`}
+            </Text>
+            <ChevronRight size={16} color={theme.subtextLight} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.navRow,
+              {
+                borderBottomWidth: StyleSheet.hairlineWidth,
+                borderBottomColor: theme.border,
+              },
+            ]}
+            onPress={() => router.push("/savings-goals")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.navRowIcon,
+                { backgroundColor: theme.veloBlueDim },
+              ]}
+            >
+              <Target size={18} color={theme.veloBlue} />
+            </View>
+            <View style={styles.navRowText}>
+              <Text style={[styles.navRowLabel, { color: theme.text }]}>
+                Savings Goal
+              </Text>
+              <Text style={[styles.navRowSub, { color: theme.subtext }]}>
+                Monthly target
+              </Text>
+            </View>
+            <Text style={[styles.navRowValue, { color: theme.subtext }]}>
+              {`₹${savingsGoal.toLocaleString()}`}
+            </Text>
+            <ChevronRight size={16} color={theme.subtextLight} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.navRow}
+            onPress={() => router.push("/category-budgets")}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.navRowIcon,
+                { backgroundColor: theme.veloBlueDim },
+              ]}
+            >
+              <TrendingUp size={18} color={theme.veloBlue} />
+            </View>
+            <View style={styles.navRowText}>
+              <Text style={[styles.navRowLabel, { color: theme.text }]}>
+                Category Budgets
+              </Text>
+              <Text style={[styles.navRowSub, { color: theme.subtext }]}>
+                Set spending limits
+              </Text>
+            </View>
+            <Text style={[styles.navRowValue, { color: theme.subtext }]}>
+              Customize
+            </Text>
+            <ChevronRight size={16} color={theme.subtextLight} />
+          </TouchableOpacity>
+        </View>
+
+        {/* How We Calculate */}
+        <View
+          style={[
+            styles.explainCard,
+            { backgroundColor: theme.surface, borderColor: theme.border },
+          ]}
+        >
+          <Text style={[styles.explainTitle, { color: theme.text }]}>
+            How We Calculate Safe-to-Spend
+          </Text>
+          <View
+            style={[
+              styles.formulaBox,
+              { backgroundColor: theme.surfaceVariant },
             ]}
           >
-            Discard Changes
+            <Text style={[styles.formula, { color: theme.text }]}>
+              S = (I – B – G) – Eₚ
+            </Text>
+          </View>
+          {[
+            { key: "S", label: "Safe-to-Spend (liquid cash available)" },
+            { key: "I", label: "Monthly Income (total take-home)" },
+            { key: "B", label: "Fixed Bills (rent, EMI, subscriptions)" },
+            { key: "G", label: "Savings Goal (what you save first)" },
+            {
+              key: "Eₚ",
+              label: "Pending Expenses (already logged this month)",
+            },
+          ].map(({ key, label }) => (
+            <View key={key} style={styles.explainRow}>
+              <Text style={[styles.explainKey, { color: theme.veloBlue }]}>
+                {key}
+              </Text>
+              <Text style={[styles.explainLabel, { color: theme.subtext }]}>
+                {" "}
+                = {label}
+              </Text>
+            </View>
+          ))}
+          <Text style={[styles.explainNote, { color: theme.subtext }]}>
+            We subtract your fixed commitments and savings goal upfront, so you
+            see a realistic "safe" amount you can actually spend without
+            derailing your month.
+          </Text>
+        </View>
+      </ScrollView>
+
+      {/* Footer Buttons */}
+      <View style={[styles.footer, { borderTopColor: theme.border }]}>
+        <TouchableOpacity
+          style={[styles.footerBtnOutline, { borderColor: theme.border }]}
+          onPress={() => router.push("/(tabs)/vault")}
+          activeOpacity={0.7}
+        >
+          <TrendingDown size={16} color={theme.text} />
+          <Text style={[styles.footerBtnOutlineText, { color: theme.text }]}>
+            Add Fixed Bill
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[
-            styles.saveBtn,
-            {
-              backgroundColor: theme.veloBlue,
-              opacity: !hasChanges || saving ? 0.4 : 1,
-            },
-          ]}
-          onPress={handleSave}
-          disabled={!hasChanges || saving}
+          style={[styles.footerBtnFill, { backgroundColor: theme.veloBlue }]}
+          onPress={() => router.push("/category-budgets")}
           activeOpacity={0.8}
         >
-          <Text style={styles.saveBtnText}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Text>
+          <Text style={styles.footerBtnFillText}>Set Budgets</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -290,8 +308,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 12,
-    marginBottom: 20,
+    paddingBottom: 16,
+    marginBottom: 4,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn: {
@@ -301,82 +319,135 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  titleBlock: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 18,
-    fontFamily: "Inter-Bold",
-  },
-  content: {
-    flex: 1,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
+  headerText: { flex: 1 },
+  headerTitle: { fontSize: 22, fontFamily: "Inter-Bold" },
+  headerSub: { fontSize: 13, fontFamily: "Inter-Regular", marginTop: 2 },
+  content: { padding: 20, gap: 16, paddingBottom: 24 },
+
+  // Hero
+  heroCard: { borderRadius: 20, padding: 20 },
+  heroTop: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  heroLabel: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: "rgba(255,255,255,0.8)",
+    marginBottom: 4,
+  },
+  heroAmount: { fontSize: 36, fontFamily: "Inter-Black", color: "#FFFFFF" },
+  heroBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 12,
   },
-  sectionTitle: {
-    fontSize: 18,
+  heroBreakdown: { gap: 6 },
+  heroRow: { flexDirection: "row", justifyContent: "space-between" },
+  heroRowLabel: {
+    fontSize: 13,
+    fontFamily: "Inter-Regular",
+    color: "rgba(255,255,255,0.75)",
+  },
+  heroRowValue: {
+    fontSize: 13,
     fontFamily: "Inter-Bold",
+    color: "#FFFFFF",
   },
-  summaryChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  heroRowSeparator: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.25)",
+    marginTop: 6,
+    paddingTop: 6,
+  },
+  heroRowHighlight: {
+    fontSize: 15,
+    fontFamily: "Inter-Black",
+    color: "#FFFFFF",
+  },
+
+  // Nav rows
+  navCard: {
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
   },
-  summaryChipText: {
-    fontSize: 12,
-    fontFamily: "Inter-Bold",
-  },
-  resetBtn: {
-    marginHorizontal: 20,
-    marginTop: 8,
-    marginBottom: 24,
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: "dashed",
+  navRowIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: "center",
     alignItems: "center",
   },
-  resetBtnText: {
-    fontSize: 14,
-    fontFamily: "Inter-Bold",
+  navRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
   },
+  navRowText: { flex: 1 },
+  navRowLabel: { fontSize: 15, fontFamily: "Inter-Bold" },
+  navRowSub: { fontSize: 12, fontFamily: "Inter-Regular", marginTop: 1 },
+  navRowValue: { fontSize: 14, fontFamily: "Inter-Bold", marginRight: 4 },
+
+  // Explain card
+  explainCard: {
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: 16,
+  },
+  explainTitle: { fontSize: 16, fontFamily: "Inter-Bold", marginBottom: 12 },
+  formulaBox: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    alignItems: "center",
+  },
+  formula: { fontSize: 18, fontFamily: "Inter-Bold", fontStyle: "italic" },
+  explainRow: { flexDirection: "row", marginBottom: 4 },
+  explainKey: { fontSize: 13, fontFamily: "Inter-Bold", minWidth: 24 },
+  explainLabel: { fontSize: 13, fontFamily: "Inter-Regular", flex: 1 },
+  explainNote: {
+    fontSize: 12,
+    fontFamily: "Inter-Regular",
+    marginTop: 12,
+    lineHeight: 18,
+  },
+
+  // Footer
   footer: {
     flexDirection: "row",
     gap: 12,
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 24,
+    paddingTop: 14,
+    paddingBottom: 20,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
-  discardBtn: {
+  footerBtnOutline: {
     flex: 1,
-    height: 52,
+    height: 50,
     borderRadius: 14,
     borderWidth: 1,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
+    gap: 6,
   },
-  discardBtnText: {
-    fontSize: 14,
-    fontFamily: "Inter-Bold",
-  },
-  saveBtn: {
+  footerBtnOutlineText: { fontSize: 14, fontFamily: "Inter-Bold" },
+  footerBtnFill: {
     flex: 1,
-    height: 52,
+    height: 50,
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
-  saveBtnText: {
+  footerBtnFillText: {
     fontSize: 14,
     fontFamily: "Inter-Bold",
     color: "#FFFFFF",

@@ -146,6 +146,7 @@ export function AddFixedBillModal({ visible, onClose, subscription }: Props) {
       }
 
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      await queryClient.invalidateQueries({ queryKey: ["safe-to-spend"] });
       handleClose();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Something went wrong");

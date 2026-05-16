@@ -251,6 +251,7 @@ export const SubscriptionList = ({
     try {
       await apiDelete(`/subscriptions/${id}`);
       await queryClient.invalidateQueries({ queryKey: ["subscriptions"] });
+      await queryClient.invalidateQueries({ queryKey: ["safe-to-spend"] });
     } catch (e) {
       Alert.alert("Error", "Failed to delete subscription");
     }
