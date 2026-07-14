@@ -35,9 +35,23 @@ export default function BudgetSettingsScreen() {
   const cardCount = onboardingData?.creditCards?.length ?? 0;
   const totalCardLimit =
     onboardingData?.creditCards?.reduce((s, c) => s + c.limit, 0) ?? 0;
+  // The API value is always the authoritative safe-to-spend total — never
+  // recompute a competing figure here to display as the total.
   const safeToSpend = safeToSpendData?.amount ?? 0;
   const totalMonthlyBills = subscriptionData?.totalMonthly ?? 0;
   const fmt = (n: number) => `₹${n.toLocaleString()}`;
+
+  // Matches backend's round2 (Math.round(n * 100) / 100) so the reconciliation
+  // check below uses the same rounding the API used to produce safeToSpend.
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const localSum = round2(totalIncome - totalMonthlyBills - savingsGoal);
+  // Only compare once all three inputs have actually loaded — otherwise the
+  // still-loading "0" defaults would falsely look like a discrepancy.
+  const hasDiscrepancy =
+    safeToSpendData !== null &&
+    onboardingData !== null &&
+    subscriptionData !== null &&
+    round2(safeToSpend) !== localSum;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.background }]}>
@@ -95,6 +109,12 @@ export default function BudgetSettingsScreen() {
               </Text>
             </View>
           </View>
+          {hasDiscrepancy && (
+            <Text style={styles.heroDiscrepancyNote}>
+              These figures are out of sync with your latest safe-to-spend
+              total — pull to refresh.
+            </Text>
+          )}
         </View>
 
         {/* Nav Rows */}
@@ -369,6 +389,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Inter-Black",
     color: "#FFFFFF",
+  },
+  heroDiscrepancyNote: {
+    fontSize: 11,
+    fontFamily: "Inter-Regular",
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 10,
   },
 
   // Nav rows
