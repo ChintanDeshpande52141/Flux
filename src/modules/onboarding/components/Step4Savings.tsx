@@ -102,12 +102,16 @@ export const Step4Savings = ({
           />
           <View style={styles.previewRow}>
             <Text style={[styles.previewLabelBold, { color: theme.text }]}>
-              Available for Spending
+              Estimated Available for Spending
             </Text>
             <Text style={[styles.previewAmountBold, { color: theme.veloBlue }]}>
               ₹{available.toLocaleString()}
             </Text>
           </View>
+          <Text style={[styles.previewEstimateNote, { color: theme.subtext }]}>
+            Estimate only — excludes fixed bills and subscriptions. Your
+            actual safe-to-spend amount is calculated after onboarding.
+          </Text>
         </View>
       )}
     </ScrollView>
@@ -159,5 +163,10 @@ const styles = StyleSheet.create({
   previewValue: { fontSize: 14, fontFamily: "Inter-Bold" },
   previewLabelBold: { fontSize: 14, fontFamily: "Inter-Bold" },
   previewAmountBold: { fontSize: 22, fontFamily: "Inter-Black" },
+  previewEstimateNote: {
+    fontSize: 11,
+    fontFamily: "Inter-Regular",
+    lineHeight: 15,
+  },
   previewDivider: { height: StyleSheet.hairlineWidth, marginVertical: 4 },
 });
