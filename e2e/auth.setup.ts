@@ -16,7 +16,7 @@ setup("authenticate", async ({ page }) => {
   await page.goto("/login");
   await page.getByPlaceholder("you@example.com").fill(email);
   await page.getByPlaceholder("••••••••").fill(password);
-  await page.getByRole("button", { name: "Sign In" }).click();
+  await page.getByText("Sign In", { exact: true }).click();
 
   // Wait until the auth guard has moved us off the login screen.
   await expect(page).not.toHaveURL(/login/, { timeout: 15_000 });
